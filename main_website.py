@@ -102,26 +102,26 @@ def logout():
 # --- CORRECTION APPLIQUÉE ICI : Lancement du bot et du site ---
 
 def run_bot():
-    """Fonction qui sera exécutée dans un thread séparé pour lancer le bot."""
-    # Chaque thread a besoin de sa propre boucle d'événements asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    bot = MyBot()
-    # bot.run() est bloquant, il va donc faire tourner la boucle pour nous
-    bot.run(TOKEN)
+        """Fonction qui sera exécutée dans un thread séparé pour lancer le bot."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        bot = MyBot()
+        bot.run(TOKEN)
 
 if __name__ == '__main__':
-        # 1. Démarrer le bot Discord en arrière-plan
+        # 1. On démarre le bot Discord dans un thread en arrière-plan
         print(">>> Démarrage du bot Discord en arrière-plan...")
         bot_thread = threading.Thread(target=run_bot)
         bot_thread.daemon = True
         bot_thread.start()
 
-        # 2. Démarrer le serveur web Gunicorn (pour Render)
-        print(">>> Démarrage du serveur web Gunicorn...")
-        # Cette partie est différente du code de développement local
+        # 2. On démarre un serveur de production Waitress
+        # Render fournit automatiquement la variable d'environnement PORT
+        port = int(os.environ.get("PORT", 5001))
+        print(f">>> Démarrage du serveur web Waitress sur le port {port}")
+        
         from waitress import serve
-        serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5001)))
+        serve(app, host="0.0.0.0", port=port)
 
 # ==============================================================================
