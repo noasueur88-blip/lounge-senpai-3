@@ -1,0 +1,12 @@
+discord.py
+python-dotenv
+Flask
+gunicorn
+requests
+requests-oauthlib
+waitress
+Flask
+python-dotenv
+requests
+requests-oauthlib
+gunicorn

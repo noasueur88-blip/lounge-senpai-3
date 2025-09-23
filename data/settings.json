@@ -1,0 +1,78 @@
+{
+    "1414623980517720156": {
+        "automod_config": {
+            "enabled": true,
+            "vulgarity_filter_enabled": true,
+            "spam_filter_enabled": true,
+            "banned_words": [
+                "tg",
+                "ta m\u00e8re",
+                "ntm",
+                "fdp",
+                "suce"
+            ],
+            "temp_ban_threshold": 4,
+            "temp_ban_duration_days": 1,
+            "perm_ban_threshold": 6,
+            "ignored_channels": []
+        }
+    },
+    "1413339682271526946": {
+        "automod_config": {
+            "enabled": true,
+            "vulgarity_filter_enabled": true,
+            "spam_filter_enabled": true,
+            "nsfw_filter_enabled": true,
+            "nsfw_filter_action": "delete_and_warn",
+            "nsfw_log_channel": 1413345622160965715,
+            "nsfw_ignored_roles": [
+                1413354520565645395
+            ],
+            "banned_words": [],
+            "timeout_threshold": 3,
+            "timeout_duration_minutes": 60,
+            "temp_ban_threshold": 5,
+            "temp_ban_duration_days": 7,
+            "perm_ban_threshold": 10,
+            "ignored_channels": []
+        },
+        "suggestions_config": {
+            "suggestion_channel": 1415437721421353060,
+            "review_channel": 1415437721421353060,
+            "approved_channel": 1415437721421353060,
+            "refused_channel": 1415437721421353060
+        },
+        "ticket_config": {
+            "ticket_category_id": 1413345564636090460,
+            "support_role_id": 1415435142540951602
+        },
+        "boost_config": {},
+        "log_config": {},
+        "economy_config": {
+            "daily_min": 25,
+            "daily_max": 75,
+            "currency_name": "zeni",
+            "currency_emoji": "\ud83d\udcb0"
+        },
+        "shop_config": {
+            "shop_channel_id": 1417190240770195476
+        },
+        "leveling_config": {
+            "activated": true,
+            "level_up_message": "bravo {user} tu vient de gagner un niveau continue comme sa"
+        }
+    },
+    "1420017902748307510": {
+        "suggestions_config": {},
+        "ticket_config": {
+            "ticket_category_id": 1420109258795515944,
+            "support_role_id": 1420024617313112146
+        },
+        "boost_config": {},
+        "log_config": {},
+        "automod_config": {},
+        "economy_config": {},
+        "shop_config": {},
+        "leveling_config": {}
+    }
+}

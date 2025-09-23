@@ -1,0 +1,10 @@
+ # Fichiers de secrets
+    .env
+    config.json
+
+    # Fichiers de cache Python
+    __pycache__/
+    *.pyc
+
+    # Fichiers de cache VS Code
+    .vscode/

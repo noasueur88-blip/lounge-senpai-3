@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}Accueil - Mon Bot Discord{% endblock %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-dark rounded-3 text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Rendez votre serveur Discord génial !</h1>
+        <p class="fs-4">Mon Bot apporte des fonctionnalités de modération, d'économie et de communauté pour dynamiser votre serveur. Facile à utiliser et entièrement personnalisable.</p>
+        <a href="{{ invite_link }}" class="btn btn-primary btn-lg" type="button">Ajouter à mon serveur</a>
+        <a href="/commands" class="btn btn-outline-secondary btn-lg" type="button">Voir les commandes</a>
+    </div>
+</div>
+
+<div class="row text-center">
+    <div class="col-md-4">
+        <h2>Modération Facile</h2>
+        <p>Protégez votre communauté avec des outils d'automodération puissants et des commandes simples.</p>
+    </div>
+    <div class="col-md-4">
+        <h2>Économie Amusante</h2>
+        <p>Engagez vos membres avec un système de monnaie, une boutique et des récompenses.</p>
+    </div>
+    <div class="col-md-4">
+        <h2>Communauté Active</h2>
+        <p>Sondages, giveaways, profils et bien plus pour garder vos membres actifs.</p>
+    </div>
+</div>
+{% endblock %}

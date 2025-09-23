@@ -1,0 +1,304 @@
+[
+    {
+        "name": "maintenance",
+        "description": "Gère la maintenance du serveur.",
+        "subcommands": [
+            {
+                "name": "maintenance activate",
+                "description": "Active la maintenance (restreint l'accès aux salons).",
+                "subcommands": []
+            },
+            {
+                "name": "maintenance deactivate",
+                "description": "Désactive la maintenance et restaure les permissions.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "kick",
+        "description": "Expulse un membre du serveur.",
+        "subcommands": []
+    },
+    {
+        "name": "ban",
+        "description": "Bannit un membre du serveur.",
+        "subcommands": []
+    },
+    {
+        "name": "clear",
+        "description": "Supprime un nombre spécifié de messages.",
+        "subcommands": []
+    },
+    {
+        "name": "automod",
+        "description": "Configure le système d'avertissement automatique.",
+        "subcommands": []
+    },
+    {
+        "name": "mariage",
+        "description": "Demander un autre membre en mariage.",
+        "subcommands": []
+    },
+    {
+        "name": "divorce",
+        "description": "Mettre fin à un ou plusieurs mariages.",
+        "subcommands": []
+    },
+    {
+        "name": "partenaires",
+        "description": "Affiche la liste de vos partenaires.",
+        "subcommands": []
+    },
+    {
+        "name": "boutique",
+        "description": "Commandes pour interagir avec la boutique du serveur.",
+        "subcommands": [
+            {
+                "name": "boutique voir",
+                "description": "Affiche les articles disponibles dans la boutique.",
+                "subcommands": []
+            },
+            {
+                "name": "boutique acheter",
+                "description": "Acheter un article de la boutique.",
+                "subcommands": []
+            },
+            {
+                "name": "boutique configurer",
+                "description": "Configure les paramètres de base de la boutique.",
+                "subcommands": []
+            },
+            {
+                "name": "boutique créer-item",
+                "description": "Crée un nouvel article pour la boutique.",
+                "subcommands": []
+            },
+            {
+                "name": "boutique supprimer-item",
+                "description": "Supprime un article de la boutique.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "economie",
+        "description": "Commandes liées à l'économie du serveur.",
+        "subcommands": [
+            {
+                "name": "economie solde",
+                "description": "Affiche votre solde ou celui d'un autre membre.",
+                "subcommands": []
+            },
+            {
+                "name": "economie classement",
+                "description": "Affiche le classement des membres les plus riches.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "daily",
+        "description": "Récupère votre récompense quotidienne.",
+        "subcommands": []
+    },
+    {
+        "name": "suggestions",
+        "description": "Commandes liées aux suggestions.",
+        "subcommands": [
+            {
+                "name": "suggestions créer",
+                "description": "Soumettre une nouvelle suggestion.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "panel-tickets",
+        "description": "Affiche le panel de création de tickets (Admin).",
+        "subcommands": []
+    },
+    {
+        "name": "design-textuel",
+        "description": "Applique un style au nom d'un salon textuel.",
+        "subcommands": []
+    },
+    {
+        "name": "design-vocal",
+        "description": "Applique un style au nom d'un salon vocal.",
+        "subcommands": []
+    },
+    {
+        "name": "design-categorie",
+        "description": "Applique un style au nom d'une catégorie.",
+        "subcommands": []
+    },
+    {
+        "name": "prison",
+        "description": "Envoie un membre en prison.",
+        "subcommands": []
+    },
+    {
+        "name": "unprison",
+        "description": "Libère un membre de prison.",
+        "subcommands": []
+    },
+    {
+        "name": "profil",
+        "description": "Affiche votre profil de niveau ou celui d'un autre membre.",
+        "subcommands": []
+    },
+    {
+        "name": "leaderboard",
+        "description": "Affiche le classement des membres par XP.",
+        "subcommands": []
+    },
+    {
+        "name": "config",
+        "description": "Configure les différents modules du bot.",
+        "subcommands": [
+            {
+                "name": "config suggestions",
+                "description": "Configure le système de suggestions.",
+                "subcommands": []
+            },
+            {
+                "name": "config tickets",
+                "description": "Configure le système de tickets.",
+                "subcommands": []
+            },
+            {
+                "name": "config economie",
+                "description": "Configure le système économique.",
+                "subcommands": [
+                    {
+                        "name": "config economie monnaie",
+                        "description": "Définit le nom et l'emoji de la monnaie.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "config economie daily",
+                        "description": "Configure les gains de la récompense quotidienne.",
+                        "subcommands": []
+                    }
+                ]
+            },
+            {
+                "name": "config leveling",
+                "description": "Configure le système de niveaux et d'XP.",
+                "subcommands": []
+            },
+            {
+                "name": "config shop",
+                "description": "Configure le canal d'affichage de la boutique.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "admin-xp",
+        "description": "Commandes d'administration pour l'XP des membres.",
+        "subcommands": [
+            {
+                "name": "admin-xp ajouter",
+                "description": "Ajoute de l'XP à un membre.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "admin-monnaie",
+        "description": "Commandes d'administration pour la monnaie des membres.",
+        "subcommands": [
+            {
+                "name": "admin-monnaie ajouter",
+                "description": "Ajoute de la monnaie à un membre.",
+                "subcommands": []
+            }
+        ]
+    },
+    {
+        "name": "commu",
+        "description": "…",
+        "subcommands": [
+            {
+                "name": "commu base",
+                "description": "Commandes communautaires de base.",
+                "subcommands": [
+                    {
+                        "name": "commu base ping",
+                        "description": "Affiche la latence du bot.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu base server-info",
+                        "description": "Affiche des informations sur le serveur.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu base user-info",
+                        "description": "Affiche des informations sur un membre.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu base avatar",
+                        "description": "Affiche l'avatar d'un membre en grand.",
+                        "subcommands": []
+                    }
+                ]
+            },
+            {
+                "name": "commu superieur",
+                "description": "Commandes communautaires supérieures.",
+                "subcommands": [
+                    {
+                        "name": "commu superieur sondage",
+                        "description": "Crée un sondage simple avec des réactions.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu superieur annonce",
+                        "description": "Crée et envoie une annonce formatée dans un salon.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu superieur role-menu",
+                        "description": "Crée un menu de rôles interactif avec des boutons.",
+                        "subcommands": []
+                    }
+                ]
+            },
+            {
+                "name": "commu avance",
+                "description": "Commandes communautaires avancées.",
+                "subcommands": [
+                    {
+                        "name": "commu avance purge",
+                        "description": "Supprime un nombre de messages avec des filtres.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu avance mod-profile",
+                        "description": "Affiche l'historique de modération d'un membre.",
+                        "subcommands": []
+                    },
+                    {
+                        "name": "commu avance leaderboard",
+                        "description": "Affiche le classement d'activité du serveur (basé sur les messages).",
+                        "subcommands": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "export-commands",
+        "description": "[Propriétaire] Exporte la liste des commandes pour le site web.",
+        "subcommands": []
+    },
+    {
+        "name": "debug-hello",
+        "description": "[Propriétaire] Un simple test pour voir si les commandes apparaissent.",
+        "subcommands": []
+    }
+]

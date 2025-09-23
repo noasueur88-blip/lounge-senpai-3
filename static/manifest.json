@@ -1,0 +1,21 @@
+{
+  "name": "Dashboard Mon Bot",
+  "short_name": "BotDash",
+  "description": "Gérez les paramètres de votre serveur pour Mon Bot.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2c2f33",
+  "theme_color": "#7289da",
+  "icons": [
+    {
+      "src": "/static/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

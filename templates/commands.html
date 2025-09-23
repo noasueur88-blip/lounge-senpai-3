@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block title %}Commandes - Mon Bot Discord{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================================== -->
+<!-- CORRECTION APPLIQUÉE ICI -->
+<!-- Définition d'un macro récursif pour afficher les commandes et sous-commandes -->
+{% macro render_commands(command_list) %}
+    <ul class="list-group list-group-flush">
+    {% for command in command_list %}
+        {% if command.subcommands %}
+            <!-- Si c'est un groupe, on affiche son nom et on rappelle le macro pour ses sous-commandes -->
+            <li class="list-group-item">
+                <strong>/{{ command.name|replace(command.name.split(' ')[0] + ' ', '') }}</strong> - <span class="text-muted">{{ command.description }}</span>
+                {{ render_commands(command.subcommands) }}
+            </li>
+        {% else %}
+            <!-- Si c'sest une commande finale, on l'affiche -->
+            <li class="list-group-item"><code>/{{ command.name }}</code> - {{ command.description }}</li>
+        {% endif %}
+    {% endfor %}
+    </ul>
+{% endmacro %}
+<!-- ============================================================================== -->
+
+
+<div class="text-center mb-5">
+    <h1>Liste des Commandes</h1>
+    <p class="lead">Découvrez tout ce que notre bot peut faire pour votre serveur. Cette liste est toujours à jour !</p>
+</div>
+
+<div class="accordion" id="commandsAccordion">
+    {% for category in categories %}
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ category.name }}">
+                /{{ category.name }} - {{ category.description }}
+            </button>
+        </h2>
+        <div id="collapse-{{ category.name }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" data-bs-parent="#commandsAccordion">
+            <div class="accordion-body">
+                {% if category.subcommands %}
+                    <!-- On appelle notre macro pour afficher la liste des commandes de cette catégorie -->
+                    {{ render_commands(category.subcommands) }}
+                {% else %}
+                    <!-- Cas d'une commande simple sans sous-commandes, comme /help -->
+                    <ul class="list-group">
+                        <li class="list-group-item"><code>/{{ category.name }}</code> - {{ category.description }}</li>
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        La liste des commandes n'a pas pu être chargée. Veuillez exécuter la commande <code>/export-commands</code> sur Discord.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
