@@ -91,7 +91,12 @@ def dashboard():
     user = discord_session.get(API_BASE_URL + '/users/@me').json()
     guilds = discord_session.get(API_BASE_URL + '/users/@me/guilds').json()
     admin_guilds = [g for g in guilds if int(g['permissions']) & 0x8]
-    return render_template('dashboard.html', user=user, guilds=admin_guilds)
+    return render_template(
+        'dashboard.html', 
+        user=user, 
+        guilds=admin_guilds,
+        invite_link=INVITE_LINK,
+        support_link=SUPPORT_SERVER_LINK
 
 @app.route('/logout')
 def logout():
