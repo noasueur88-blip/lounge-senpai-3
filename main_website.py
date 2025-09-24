@@ -66,7 +66,8 @@ def commands():
     return render_template('commands.html', 
                            categories=command_categories,
                            invite_link=INVITE_LINK, 
-                           support_link=SUPPORT_SERVER_LINK)
+                           support_link=SUPPORT_SERVER_LINK
+    )
 
 # ... (vos routes /login, /callback, /dashboard, /logout restent inchangées) ...
 @app.route('/login')
