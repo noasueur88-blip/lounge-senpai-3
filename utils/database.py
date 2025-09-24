@@ -21,6 +21,7 @@ class DatabaseManager:
 
     async def connect(self):
         """Établit la connexion à la base de données."""
+        """Établit la connexion à la base de données."""
         try:
             os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             self._connection = await aiosqlite.connect(self.db_path)
@@ -28,12 +29,18 @@ class DatabaseManager:
             await self._connection.execute("PRAGMA foreign_keys = ON;")
             print(f"Connexion à la base de données '{self.db_path}' réussie.")
             # L'initialisation des tables sera maintenant gérée explicitement depuis main.py
+            # L'initialisation des tables sera maintenant gérée explicitement depuis main.py
         except Exception as e:
             print(f"ERREUR CRITIQUE lors de la connexion à la DB : {e}")
             traceback.print_exc()
             self._connection = None
             raise e
 
+    # ==============================================================================
+    # --- MODIFICATION 1 : RENOMMAGE ET AJOUT DE LA TABLE ---
+    # Renommé en "initialize_tables" pour être plus clair et public.
+    async def initialize_tables(self):
+    # ==============================================================================
     # ==============================================================================
     # --- MODIFICATION 1 : RENOMMAGE ET AJOUT DE LA TABLE ---
     # Renommé en "initialize_tables" pour être plus clair et public.
@@ -92,6 +99,19 @@ class DatabaseManager:
             saved_roles TEXT, -- Sera NULL pour les non-admins
             PRIMARY KEY (guild_id, user_id)
         );
+
+        -- ==============================================================================
+        -- MODIFICATION 2 : AJOUT DE LA TABLE MANQUANTE POUR LE LEVELING ET L'ÉCONOMIE
+        CREATE TABLE IF NOT EXISTS user_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            xp INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            money INTEGER DEFAULT 0,
+            UNIQUE(guild_id, user_id)
+        );
+        -- ==============================================================================
 
         -- ==============================================================================
         -- MODIFICATION 2 : AJOUT DE LA TABLE MANQUANTE POUR LE LEVELING ET L'ÉCONOMIE
@@ -260,7 +280,9 @@ class DatabaseManager:
 
         if not user_data:
             insert_query = "INSERT OR IGNORE INTO user_data (guild_id, user_id) VALUES (?, ?)"
+            insert_query = "INSERT OR IGNORE INTO user_data (guild_id, user_id) VALUES (?, ?)"
             await self.execute(insert_query, (guild_id, user_id))
+            return await self.fetch_one(query, (guild_id, user_id))
             return await self.fetch_one(query, (guild_id, user_id))
         
         return user_data
@@ -270,7 +292,10 @@ class DatabaseManager:
         query = """
             UPDATE user_data SET xp = ?, level = ?
             WHERE guild_id = ? AND user_id = ?
+            UPDATE user_data SET xp = ?, level = ?
+            WHERE guild_id = ? AND user_id = ?
         """
+        await self.execute(query, (new_xp, new_level, guild_id, user_id))
         await self.execute(query, (new_xp, new_level, guild_id, user_id))
     
     async def get_leaderboard(self, guild_id: int, limit: int = 10) -> List[Dict]:
@@ -280,11 +305,14 @@ class DatabaseManager:
             FROM user_data 
             WHERE guild_id = ? 
             ORDER BY level DESC, xp DESC 
+            ORDER BY level DESC, xp DESC 
             LIMIT ?
         """
         return await self.fetch_all(query, (guild_id, limit))
     
 # --- Instance Globale ---
+# La bonne pratique est de créer cette instance uniquement dans main.py.
+# Je la laisse ici car vous avez demandé de ne pas modifier la structure existante.
 # La bonne pratique est de créer cette instance uniquement dans main.py.
 # Je la laisse ici car vous avez demandé de ne pas modifier la structure existante.
 db = DatabaseManager(db_path=DB_PATH)
