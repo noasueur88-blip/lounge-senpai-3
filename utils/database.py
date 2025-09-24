@@ -44,9 +44,9 @@ class DatabaseManager:
     # ==============================================================================
     # --- MODIFICATION 1 : RENOMMAGE ET AJOUT DE LA TABLE ---
     # Renommé en "initialize_tables" pour être plus clair et public.
-    async def initialize_tables(self):
+        async def initialize_tables(self):
     # ==============================================================================
-        """Crée les tables nécessaires si elles n'existent pas."""
+            """Crée les tables nécessaires si elles n'existent pas."""
         if not self._connection:
             print("ERREUR: Impossible d'initialiser les tables, pas de connexion DB.")
             return
