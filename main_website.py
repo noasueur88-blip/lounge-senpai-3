@@ -97,7 +97,8 @@ def dashboard():
         user=user, 
         guilds=admin_guilds,
         invite_link=INVITE_LINK,
-        support_link=SUPPORT_SERVER_LINK)
+        support_link=SUPPORT_SERVER_LINK
+    )
     # ==============================================================================
 
 @app.route('/logout')
