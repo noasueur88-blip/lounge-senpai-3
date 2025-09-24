@@ -2,19 +2,16 @@
 import threading
 import asyncio
 import os
-import json # Assurez-vous que json est importé
+import json
 from flask import Flask, render_template, redirect, url_for, session, request
 from dotenv import load_dotenv
-from requests_oauthlib import OAuth2Session # Importation nécessaire
+from requests_oauthlib import OAuth2Session
 
 # --- IMPORTER VOTRE BOT ---
-# Assurez-vous d'avoir renommé votre ancien "main.py" du bot en "bot_main.py"
-# et qu'il se trouve dans le même dossier que ce fichier.
-from bot_main import MyBot, TOKEN # type: ignore
+from bot_main import MyBot, TOKEN
 
 # --- Configuration initiale ---
 load_dotenv()
-# Permet à OAuthlib d'utiliser HTTP pour le développement local
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # --- Initialisation de l'application Flask (le site web) ---
@@ -68,7 +65,6 @@ def commands():
                            invite_link=INVITE_LINK, 
                            support_link=SUPPORT_SERVER_LINK)
 
-# ... (vos routes /login, /callback, /dashboard, /logout restent inchangées) ...
 @app.route('/login')
 def login():
     discord_session = make_session(scope=SCOPE)
@@ -91,37 +87,40 @@ def dashboard():
     user = discord_session.get(API_BASE_URL + '/users/@me').json()
     guilds = discord_session.get(API_BASE_URL + '/users/@me/guilds').json()
     admin_guilds = [g for g in guilds if int(g['permissions']) & 0x8]
-    return render_template('dashboard.html', user=user, guilds=admin_guilds)
+    
+    # ==============================================================================
+    # --- CORRECTION APPLIQUÉE ICI ---
+    # On ajoute les variables manquantes pour que le layout.html (le menu)
+    # puisse afficher correctement les boutons "Inviter le Bot" et "Support".
+    return render_template(
+        'dashboard.html', 
+        user=user, 
+        guilds=admin_guilds,
+        invite_link=INVITE_LINK,
+        support_link=SUPPORT_SERVER_LINK
+    )
+    # ==============================================================================
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ==============================================================================
-# --- CORRECTION APPLIQUÉE ICI : Lancement du bot et du site ---
+# --- Lancement du bot et du site ---
 
 def run_bot():
-        """Fonction qui sera exécutée dans un thread séparé pour lancer le bot."""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
         bot = MyBot()
         bot.run(TOKEN)
 
 if __name__ == '__main__':
-        # 1. On démarre le bot Discord dans un thread en arrière-plan
         print(">>> Démarrage du bot Discord en arrière-plan...")
         bot_thread = threading.Thread(target=run_bot)
         bot_thread.daemon = True
         bot_thread.start()
-
-        # 2. On démarre un serveur de production Waitress
-        # Render fournit automatiquement la variable d'environnement PORT
-        port = int(os.environ.get("PORT", 5001))
-        print(f">>> Démarrage du serveur web Waitress sur le port {port}")
         
         from waitress import serve
+        port = int(os.environ.get("PORT", 5001))
+        print(f">>> Démarrage du serveur web Waitress sur le port {port}")
         serve(app, host="0.0.0.0", port=port)
-
-# ==============================================================================
