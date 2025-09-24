@@ -115,12 +115,21 @@ def run_bot():
         bot.run(TOKEN)
 
 if __name__ == '__main__':
-        print(">>> Démarrage du bot Discord en arrière-plan...")
+        # ==============================================================================
+        # --- TEST DE DIAGNOSTIC : ON DÉSACTIVE LE BOT ---
+        # Mettez un '#' devant les 4 lignes suivantes pour empêcher le bot de démarrer.
+        # print(">>> Démarrage du bot Discord en arrière-plan...")
+        # bot_thread = threading.Thread(target=run_bot)
+        # bot_thread.daemon = True
+        # bot_thread.start()
+        # ==============================================================================
+
         bot_thread = threading.Thread(target=run_bot)
         bot_thread.daemon = True
         bot_thread.start()
         
         from waitress import serve
         port = int(os.environ.get("PORT", 5001))
-        print(f">>> Démarrage du serveur web Waitress sur le port {port}")
+        print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
         serve(app, host="0.0.0.0", port=port)
+        print(">>> Démarrage du bot Discord en arrière-plan...")

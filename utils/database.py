@@ -20,27 +20,30 @@ class DatabaseManager:
         self._connection: Optional[aiosqlite.Connection] = None
 
     async def connect(self):
-        """Établit la connexion à la base de données et initialise les tables."""
+        """Établit la connexion à la base de données."""
         try:
             os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
             self._connection = await aiosqlite.connect(self.db_path)
             self._connection.row_factory = aiosqlite.Row
             await self._connection.execute("PRAGMA foreign_keys = ON;")
             print(f"Connexion à la base de données '{self.db_path}' réussie.")
-            await self._initialize_tables()
+            # L'initialisation des tables sera maintenant gérée explicitement depuis main.py
         except Exception as e:
             print(f"ERREUR CRITIQUE lors de la connexion à la DB : {e}")
             traceback.print_exc()
             self._connection = None
             raise e
 
-    async def _initialize_tables(self):
+    # ==============================================================================
+    # --- MODIFICATION 1 : RENOMMAGE ET AJOUT DE LA TABLE ---
+    # Renommé en "initialize_tables" pour être plus clair et public.
+    async def initialize_tables(self):
+    # ==============================================================================
         """Crée les tables nécessaires si elles n'existent pas."""
         if not self._connection:
             print("ERREUR: Impossible d'initialiser les tables, pas de connexion DB.")
             return
 
-        # *** CORRECTION : Une seule définition propre du schéma SQL ***
         sql_schema = """
         BEGIN TRANSACTION;
 
@@ -89,6 +92,19 @@ class DatabaseManager:
             saved_roles TEXT, -- Sera NULL pour les non-admins
             PRIMARY KEY (guild_id, user_id)
         );
+
+        -- ==============================================================================
+        -- MODIFICATION 2 : AJOUT DE LA TABLE MANQUANTE POUR LE LEVELING ET L'ÉCONOMIE
+        CREATE TABLE IF NOT EXISTS user_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            xp INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            money INTEGER DEFAULT 0,
+            UNIQUE(guild_id, user_id)
+        );
+        -- ==============================================================================
 
         COMMIT;
         """
@@ -153,7 +169,6 @@ class DatabaseManager:
         query = "DELETE FROM temp_bans WHERE id = ?"
         await self.execute(query, (ban_id,))
 
-    # *** CORRECTION : Méthodes de mariage indentées dans la classe ***
     # --- Mariages ---
     async def get_partners(self, guild_id: int, user_id: int) -> list:
         query = """
@@ -233,10 +248,8 @@ class DatabaseManager:
             ON CONFLICT(guild_id) DO UPDATE SET {key} = excluded.{key}
         """
         await self.execute(query, (guild_id, value))
-  # *** CORRECTION : AJOUTER CES MÉTHODES POUR LE LEVELING ***
 
     # --- Méthodes pour le Leveling et les Données Utilisateur ---
-
     async def get_user_data(self, guild_id: int, user_id: int) -> Dict:
         """
         Récupère les données d'un utilisateur (xp, balance, etc.).
@@ -246,25 +259,19 @@ class DatabaseManager:
         user_data = await self.fetch_one(query, (guild_id, user_id))
 
         if not user_data:
-            # L'utilisateur n'existe pas, on le crée avec les valeurs par défaut
-            insert_query = "INSERT INTO user_data (guild_id, user_id) VALUES (?, ?)"
+            insert_query = "INSERT OR IGNORE INTO user_data (guild_id, user_id) VALUES (?, ?)"
             await self.execute(insert_query, (guild_id, user_id))
-            # On retourne les valeurs par défaut
-            return {"guild_id": guild_id, "user_id": user_id, "balance": 0, "xp": 0, "level": 0, "last_daily": None}
+            return await self.fetch_one(query, (guild_id, user_id))
         
         return user_data
 
     async def update_user_xp(self, guild_id: int, user_id: int, new_xp: int, new_level: int):
         """Met à jour l'XP et le niveau d'un utilisateur."""
-        # INSERT ... ON CONFLICT est parfait pour créer ou mettre à jour une entrée
         query = """
-            INSERT INTO user_data (guild_id, user_id, xp, level)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(guild_id, user_id) DO UPDATE SET
-                xp = excluded.xp,
-                level = excluded.level
+            UPDATE user_data SET xp = ?, level = ?
+            WHERE guild_id = ? AND user_id = ?
         """
-        await self.execute(query, (guild_id, user_id, new_xp, new_level))
+        await self.execute(query, (new_xp, new_level, guild_id, user_id))
     
     async def get_leaderboard(self, guild_id: int, limit: int = 10) -> List[Dict]:
         """Récupère le classement des utilisateurs par XP."""
@@ -272,10 +279,12 @@ class DatabaseManager:
             SELECT user_id, xp, level 
             FROM user_data 
             WHERE guild_id = ? 
-            ORDER BY xp DESC 
+            ORDER BY level DESC, xp DESC 
             LIMIT ?
         """
         return await self.fetch_all(query, (guild_id, limit))
     
 # --- Instance Globale ---
+# La bonne pratique est de créer cette instance uniquement dans main.py.
+# Je la laisse ici car vous avez demandé de ne pas modifier la structure existante.
 db = DatabaseManager(db_path=DB_PATH)
