@@ -96,8 +96,52 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
     # ==      COMMANDES DE CONFIGURATION         ==
     # =============================================
     automod_group = app_commands.Group(name="automod", description="Configure le système d'avertissement automatique.")
-    # ... (toutes vos commandes automod restent inchangées)
-    # Elles utiliseront save_data pour sauvegarder les configurations
+
+    # ==============================================================================
+    # --- CORRECTION "PARE-BALLES" APPLIQUÉE À CETTE COMMANDE ---
+    @automod_group.command(name="sanctions", description="Définit les seuils de sanction de l'automod.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.describe(
+        seuil_timeout="Nombre de warns avant un timeout (0=désactivé).",
+        # ... autres descriptions ...
+    )
+    async def automod_sanctions(self, interaction: discord.Interaction,
+                                seuil_timeout: app_commands.Range[int, 0, 100],
+                                duree_timeout_minutes: app_commands.Range[int, 1, 40320],
+                                seuil_ban_temporaire: app_commands.Range[int, 0, 100],
+                                duree_ban_temporaire_jours: app_commands.Range[int, 1, 365],
+                                seuil_ban_permanent: app_commands.Range[int, 0, 100]):
+        
+        # 1. On répond à Discord IMMÉDIATEMENT.
+        await interaction.response.defer(ephemeral=True)
+
+        # 2. On met TOUTE la logique dans un bloc try...except.
+        try:
+            config = self.get_guild_automod_config(interaction.guild.id)
+            config["timeout_threshold"] = seuil_timeout
+            config["timeout_duration_minutes"] = duree_timeout_minutes
+            config["temp_ban_threshold"] = seuil_ban_temporaire
+            config["temp_ban_duration_days"] = duree_ban_temporaire_jours
+            config["perm_ban_threshold"] = seuil_ban_permanent
+            save_data(SETTINGS_FILE, self.settings)
+
+            embed = discord.Embed(title="⚙️ Sanctions AutoMod Mises à Jour", color=discord.Color.blue())
+            embed.add_field(name="Timeout", value=f"{seuil_timeout} warns → {duree_timeout_minutes} min" if seuil_timeout > 0 else "Désactivé", inline=False)
+            embed.add_field(name="Ban Temporaire", value=f"{seuil_ban_temporaire} warns → {duree_ban_temporaire_jours} jour(s)" if seuil_ban_temporaire > 0 else "Désactivé", inline=False)
+            embed.add_field(name="Ban Permanent", value=f"{seuil_ban_permanent} warns" if seuil_ban_permanent > 0 else "Désactivé", inline=False)
+            
+            # 3. On utilise followup.send pour la réponse finale.
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+        except Exception as e:
+            # 4. Si une erreur cachée se produit, elle sera maintenant attrapée et affichée dans vos logs.
+            print(f"--- ERREUR DANS /automod sanctions ---")
+            traceback.print_exc() # Affiche l'erreur complète dans votre console Render !
+            try:
+                await interaction.followup.send("❌ Une erreur interne est survenue. L'administrateur a été notifié.", ephemeral=True)
+            except discord.HTTPException:
+                pass # L'interaction est probablement déjà morte, mais l'erreur est dans les logs.
+    # ==============================================================================
 
     # =============================================
     # ==          LISTENER ON_MESSAGE            ==
