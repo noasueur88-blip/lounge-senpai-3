@@ -95,7 +95,7 @@ class MyBot(commands.Bot):
             
             # CORRECTION 1 : Toutes ces lignes sont maintenant au même niveau d'indentation.
             # 1. Mettez l'ID de votre serveur de test ici.
-            guild_id = 123456789012345678 # REMPLACEZ CECI PAR L'ID DE VOTRE SERVEUR
+            guild_id = 1420017902748307510 # REMPLACEZ CECI PAR L'ID DE VOTRE SERVEUR
             test_guild = discord.Object(id=guild_id)
 
             # 2. On synchronise SEULEMENT sur ce serveur. C'est instantané.
