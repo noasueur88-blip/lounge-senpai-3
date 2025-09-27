@@ -90,11 +90,26 @@ class MyBot(commands.Bot):
 
         print("Synchronisation des commandes slash...")
         try:
-            synced = await self.tree.sync()
-            print(f"  [+] {len(synced)} commandes slash synchronisées globalement.")
-        except Exception as e:
-            print(f"ERREUR lors de la synchronisation : {e}", file=sys.stderr)
+            # ==============================================================================
+            # --- CORRECTION TEMPORAIRE POUR FORCER LA SYNCHRO ---
+            
+            # CORRECTION 1 : Toutes ces lignes sont maintenant au même niveau d'indentation.
+            # 1. Mettez l'ID de votre serveur de test ici.
+            guild_id = 1420017902748307510 # REMPLACEZ CECI PAR L'ID DE VOTRE SERVEUR
+            test_guild = discord.Object(id=guild_id)
 
+            # 2. On synchronise SEULEMENT sur ce serveur. C'est instantané.
+            synced = await self.tree.sync(guild=test_guild)
+            print(f"  [SYNCHRO FORCÉE] {len(synced)} commandes synchronisées sur le serveur de test.")
+            
+            # Optionnel : Si vous voulez que les commandes restent globales, vous pouvez
+            # laisser la synchronisation globale juste après.
+            # synced_global = await self.tree.sync()
+            # print(f"  [+] {len(synced_global)} commandes synchronisées globalement.")
+            # ==============================================================================
+        # CORRECTION 2 : Le 'except' est maintenant parfaitement aligné avec le 'try'.
+        except Exception as e:
+            print(f"ERREUR lors de la synchronisation : {e}")
     async def on_ready(self):
         """Événement appelé quand le bot est prêt et connecté."""
         print('-----------------------------------------')
