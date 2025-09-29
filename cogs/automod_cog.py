@@ -11,9 +11,7 @@ import datetime
 import traceback
 from collections import defaultdict
 
-# ==============================================================================
-# --- CORRECTION APPLIQUÉE ICI ---
-# Ajout des fonctions helper qui étaient manquantes, ce qui causait le NameError.
+# --- Fonctions Helper (inchangées) ---
 def load_data(filepath):
     try:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -32,10 +30,8 @@ def save_data(filepath, data):
         os.replace(temp_filepath, filepath)
     except Exception as e:
         print(f"Erreur critique sauvegarde {filepath}: {e}"); traceback.print_exc()
-# ==============================================================================
 
-# --- Constantes ---
-# ... (votre code inchangé, il utilisera maintenant les fonctions ci-dessus)
+# --- Constantes (inchangées) ---
 DATA_DIR = './data'
 SETTINGS_FILE = os.path.join(DATA_DIR, 'settings.json')
 SPAM_TIMEFRAME = 10
@@ -46,7 +42,6 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
     def __init__(self, bot: commands.Bot, db_manager):
         self.bot = bot
         self.db = db_manager
-        # La ligne ci-dessous fonctionnera maintenant car load_data est défini
         self.settings = load_data(SETTINGS_FILE) 
         self.spam_tracker = defaultdict(lambda: defaultdict(list))
         self.check_unbans_loop.start()
@@ -83,27 +78,31 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
 
     @check_unbans_loop.before_loop
     async def before_check_unbans_loop(self):
+        # ... (votre code before_loop reste inchangé)
         print("La boucle 'check_unbans_loop' attend que le bot soit prêt...")
         await self.bot.wait_until_ready()
         print("Bot prêt. La boucle 'check_unbans_loop' démarre.")
 
+    # ==============================================================================
+    # --- CORRECTION 1 : Implémentation de la fonction manquante ---
     def get_guild_automod_config(self, guild_id: int) -> dict:
-        # ... (votre code inchangé)
-        # Il utilisera save_data si la clé n'existe pas
-        pass
+        """Récupère la configuration de l'automod pour un serveur spécifique."""
+        guild_settings = self.settings.setdefault(str(guild_id), {})
+        automod_config = guild_settings.setdefault("automod_config", {})
+        return automod_config
+    # ==============================================================================
 
-    # =============================================
-    # ==      COMMANDES DE CONFIGURATION         ==
-    # =============================================
+    # --- Commandes de Configuration ---
     automod_group = app_commands.Group(name="automod", description="Configure le système d'avertissement automatique.")
 
-    # ==============================================================================
-    # --- CORRECTION "PARE-BALLES" APPLIQUÉE À CETTE COMMANDE ---
     @automod_group.command(name="sanctions", description="Définit les seuils de sanction de l'automod.")
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.describe(
         seuil_timeout="Nombre de warns avant un timeout (0=désactivé).",
-        # ... autres descriptions ...
+        duree_timeout_minutes="Durée en minutes du timeout.",
+        seuil_ban_temporaire="Nombre de warns avant un ban temporaire (0=désactivé).",
+        duree_ban_temporaire_jours="Durée en jours du ban temporaire.",
+        seuil_ban_permanent="Nombre de warns avant un ban permanent (0=désactivé)."
     )
     async def automod_sanctions(self, interaction: discord.Interaction,
                                 seuil_timeout: app_commands.Range[int, 0, 100],
@@ -112,10 +111,10 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
                                 duree_ban_temporaire_jours: app_commands.Range[int, 1, 365],
                                 seuil_ban_permanent: app_commands.Range[int, 0, 100]):
         
-        # 1. On répond à Discord IMMÉDIATEMENT.
+        # ==============================================================================
+        # --- CORRECTION 2 : Application du pattern "pare-balles" ---
         await interaction.response.defer(ephemeral=True)
 
-        # 2. On met TOUTE la logique dans un bloc try...except.
         try:
             config = self.get_guild_automod_config(interaction.guild.id)
             config["timeout_threshold"] = seuil_timeout
@@ -130,19 +129,18 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
             embed.add_field(name="Ban Temporaire", value=f"{seuil_ban_temporaire} warns → {duree_ban_temporaire_jours} jour(s)" if seuil_ban_temporaire > 0 else "Désactivé", inline=False)
             embed.add_field(name="Ban Permanent", value=f"{seuil_ban_permanent} warns" if seuil_ban_permanent > 0 else "Désactivé", inline=False)
             
-            # 3. On utilise followup.send pour la réponse finale.
             await interaction.followup.send(embed=embed, ephemeral=True)
 
         except Exception as e:
-            # 4. Si une erreur cachée se produit, elle sera maintenant attrapée et affichée dans vos logs.
             print(f"--- ERREUR DANS /automod sanctions ---")
-            traceback.print_exc() # Affiche l'erreur complète dans votre console Render !
+            traceback.print_exc()
             try:
                 await interaction.followup.send("❌ Une erreur interne est survenue. L'administrateur a été notifié.", ephemeral=True)
             except discord.HTTPException:
-                pass # L'interaction est probablement déjà morte, mais l'erreur est dans les logs.
-    # ==============================================================================
+                pass
+        # ==============================================================================
 
+    # ... (vos autres commandes, listeners et fonctions de gestion restent inchangés) ...
     # =============================================
     # ==          LISTENER ON_MESSAGE            ==
     # =============================================
@@ -163,13 +161,10 @@ class AutoModCog(commands.Cog, name="Auto-Modération"):
     async def apply_sanction(self, guild: discord.Guild, author: discord.Member, bot_user, reason: str):
         # ... (votre code inchangé)
         pass
-
-# =============================================
-# ==           SETUP DU COG                  ==
-# =============================================
+    
+# --- Setup du Cog (inchangé) ---
 async def setup(bot: commands.Bot):
     if not hasattr(bot, 'db'):
         print("ERREUR CRITIQUE (automod_cog.py): L'objet bot n'a pas d'attribut 'db'. Assurez-vous qu'il est défini dans main.py.")
         return
-
     await bot.add_cog(AutoModCog(bot, bot.db))
