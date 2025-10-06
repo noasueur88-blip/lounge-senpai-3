@@ -146,11 +146,8 @@ if __name__ == '__main__':
     bot_thread.daemon = True
     bot_thread.start()
 
+        # 2. Démarrer le serveur web Gunicorn (pour Render)
+    print(">>> Démarrage du serveur web Gunicorn...")
+        # Cette partie est différente du code de développement local
     from waitress import serve
-    port = int(os.environ.get("PORT", 5001))
-    serve(app, host="0.0.0.0", port=port)
-<<<<<<< HEAD
-    print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
-=======
-    print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
->>>>>>> 8fe3bc9bfcdd39d833731edfcff863072c24eee9
+    serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5001)))
