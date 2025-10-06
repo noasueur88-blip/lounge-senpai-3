@@ -39,7 +39,8 @@ COGS_TO_LOAD = [
     "cogs.utility", "cogs.moderation_bot", "cogs.automod_cog", "cogs.marriage_cog",
     "cogs.shop_cog", "cogs.economie_cog", "cogs.suggestions_tickets_cog",
     "cogs.design_commands", "cogs.prison", "cogs.leveling", "cogs.config_cog",
-    "cogs.admin_eco_cog", "cogs.community", "cogs.website_link", "cogs.debug_cog",
+    "cogs.admin_eco_cog", "cogs.community", "cogs.website_link", "cogs.debug_cog", 
+    "cogs.rules_management",
 ]
 
 # --- Définition de la Classe du Bot ---
