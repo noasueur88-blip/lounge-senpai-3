@@ -153,5 +153,5 @@ if __name__ == '__main__':
     # On ne démarre QUE le serveur web
     from waitress import serve
     port = int(os.environ.get("PORT", 5001))
-    print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
     serve(app, host="0.0.0.0", port=port)
+    print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
