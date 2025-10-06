@@ -149,4 +149,8 @@ if __name__ == '__main__':
     from waitress import serve
     port = int(os.environ.get("PORT", 5001))
     serve(app, host="0.0.0.0", port=port)
+<<<<<<< HEAD
     print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
+=======
+    print(f">>> Démarrage du serveur web Waitress SEUL sur le port {port}")
+>>>>>>> 8fe3bc9bfcdd39d833731edfcff863072c24eee9

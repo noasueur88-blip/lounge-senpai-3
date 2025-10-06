@@ -61,3 +61,4 @@ class WebsiteLinkCog(commands.Cog):
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(WebsiteLinkCog(bot))
+    print("Cog 'WebsiteLink' (version avec chemin absolu) chargé.")
