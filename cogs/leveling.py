@@ -1,36 +1,21 @@
-# cogs/leveling.py
 import discord
 from discord import app_commands
 from discord.ext import commands
-from typing import Optional
+import json
 import random
 import time
-import datetime
-import traceback
 
-# --- Dépendances ---
-from utils.database import db
-
-# --- Constantes ---
-XP_PER_MESSAGE_MIN = 15
-XP_PER_MESSAGE_MAX = 25
-XP_COOLDOWN_SECONDS = 60
-
-# --- Classe Cog ---
-class LevelingCog(commands.Cog, name="Niveaux & XP"):
-    def __init__(self, bot: commands.Bot, db_manager):
+class LevelingCog(commands.Cog, name="Système de Niveaux"):
+    # On crée un groupe de commandes principal /xp
+    xp_group = app_commands.Group(name="xp", description="Commandes liées au système d'expérience.")
+    
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.db = db_manager
-        self.user_cooldowns = {} # {guild_id: {user_id: timestamp}}
+        self.db = bot.db
+        # Cooldown pour éviter le spam d'XP (par utilisateur)
+        self.cooldowns = {}
 
-    def calculate_level(self, xp: int) -> int:
-        """Calcule le niveau basé sur l'XP (formule simple)."""
-        return 0 if xp <= 0 else int((xp / 150) ** 0.5)
-
-    def calculate_xp_for_level(self, level: int) -> int:
-        """Calcule l'XP nécessaire pour atteindre un niveau."""
-        return 0 if level <= 0 else int(150 * (level ** 2))
-
+    # --- Listener pour donner de l'XP ---
     @commands.Cog.listener("on_message")
     async def on_xp_message(self, message: discord.Message):
         if message.author.bot or not message.guild:
@@ -39,94 +24,97 @@ class LevelingCog(commands.Cog, name="Niveaux & XP"):
         guild_id = message.guild.id
         user_id = message.author.id
 
-        # Vérifier si le système de leveling est activé via la DB (si vous avez cette config)
-        # config = await self.db.get_guild_settings(guild_id)
-        # if not config or not config.get("leveling_config", {}).get("activated", True):
-        #     return
-            
-        now = time.time()
-        cooldowns = self.user_cooldowns.setdefault(guild_id, {})
-        last_message_time = cooldowns.get(user_id, 0)
-
-        if now - last_message_time < XP_COOLDOWN_SECONDS:
+        # Récupérer la config du serveur
+        settings = await self.db.get_guild_settings(guild_id)
+        if not settings or not json.loads(settings.get("leveling_config", "{}")).get("enabled", False):
             return
-        
-        cooldowns[user_id] = now
 
-        try:
-            user_data = await self.db.get_user_data(guild_id, user_id)
-            old_level = self.calculate_level(user_data.get("xp", 0))
-            
-            xp_to_add = random.randint(XP_PER_MESSAGE_MIN, XP_PER_MESSAGE_MAX)
-            new_xp = user_data.get("xp", 0) + xp_to_add
-            new_level = self.calculate_level(new_xp)
-            
-            await self.db.update_user_xp(guild_id, user_id, new_xp, new_level)
+        # Gestion du Cooldown (1 minute par utilisateur)
+        now = time.time()
+        cooldown_key = f"{guild_id}-{user_id}"
+        if cooldown_key in self.cooldowns and now - self.cooldowns[cooldown_key] < 60:
+            return
+        self.cooldowns[cooldown_key] = now
 
-            if new_level > old_level:
-                # config_leveling = config.get("leveling_config", {})
-                # level_up_message = config_leveling.get("level_up_message", "🎉 Bravo {user}, tu as atteint le niveau **{level}** !")
-                level_up_message = "🎉 Bravo {user}, tu as atteint le niveau **{level}** !"
-                try:
-                    await message.channel.send(level_up_message.format(user=message.author.mention, level=new_level))
-                except discord.Forbidden: pass
+        # Donner de l'XP
+        xp_gain = random.randint(15, 25)
+        user_data = await self.db.get_user_data(guild_id, user_id)
         
-        except Exception as e:
-            print(f"Erreur lors de l'attribution d'XP: {e}"); traceback.print_exc()
+        current_xp = user_data.get("xp", 0) + xp_gain
+        current_level = user_data.get("level", 1)
+        xp_needed = 5 * (current_level ** 2) + 50 * current_level + 100
 
-    @app_commands.command(name="profil", description="Affiche votre profil de niveau ou celui d'un autre membre.")
-    @app_commands.describe(membre="Le membre dont afficher le profil.")
-    async def profil(self, interaction: discord.Interaction, membre: Optional[discord.Member] = None):
-        target = membre or interaction.user
-        if target.bot:
-            await interaction.response.send_message("Les bots n'ont pas de profil.", ephemeral=True); return
-        
-        user_data = await self.db.get_user_data(interaction.guild.id, target.id)
-        xp = user_data.get("xp", 0)
-        level = self.calculate_level(xp)
-        
-        xp_for_next = self.calculate_xp_for_level(level + 1)
-        xp_current_level_base = self.calculate_xp_for_level(level)
-        xp_in_level = xp - xp_current_level_base
-        xp_needed_for_next = xp_for_next - xp_current_level_base
+        # Vérification du passage de niveau
+        if current_xp >= xp_needed:
+            current_level += 1
+            current_xp -= xp_needed
+            await self.db.update_user_xp(guild_id, user_id, current_xp, current_level)
 
-        progress = int((xp_in_level / xp_needed_for_next) * 20) if xp_needed_for_next > 0 else 20
-        bar = "▓" * progress + "░" * (20 - progress)
+            # Annonce de level-up
+            leveling_config = json.loads(settings.get("leveling_config", "{}"))
+            announcement_channel_id = leveling_config.get("announcement_channel")
+            if announcement_channel_id:
+                channel = message.guild.get_channel(announcement_channel_id)
+                if channel:
+                    await channel.send(f"🎉 Bravo {message.author.mention}, tu as atteint le niveau **{current_level}** !")
 
-        embed = discord.Embed(
-            title=f"Profil de {target.display_name}",
-            color=target.color or discord.Color.blue()
-        ).set_thumbnail(url=target.display_avatar.url
-        ).add_field(name="Niveau", value=f"`{level}`", inline=True
-        ).add_field(name="XP Total", value=f"`{xp}`", inline=True
-        ).add_field(name="Progression", value=f"`{xp_in_level} / {xp_needed_for_next}` XP\n`{bar}`", inline=False)
-        
-        await interaction.response.send_message(embed=embed)
-        
-    @app_commands.command(name="leaderboard", description="Affiche le classement des membres par XP.")
-    async def leaderboard(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        
-        top_users = await self.db.get_leaderboard(interaction.guild.id, limit=10)
-        
-        if not top_users:
-            await interaction.followup.send("Personne n'a encore gagné d'XP sur ce serveur."); return
-            
-        embed = discord.Embed(title=f"🏆 Classement XP - {interaction.guild.name}", color=discord.Color.gold())
-        description = []
-        for i, user_row in enumerate(top_users):
-            member = interaction.guild.get_member(user_row['user_id'])
-            if member:
-                level = self.calculate_level(user_row['xp'])
-                description.append(f"**{i+1}.** {member.mention} - Niveau `{level}` (`{user_row['xp']}` XP)")
-        
-        embed.description = "\n".join(description) if description else "Aucun membre du classement n'a été trouvé."
-        await interaction.followup.send(embed=embed)
+            # Attribution des rôles récompenses
+            role_rewards = leveling_config.get("role_rewards", {})
+            if str(current_level) in role_rewards:
+                role_id = role_rewards[str(current_level)]
+                role = message.guild.get_role(role_id)
+                if role:
+                    try:
+                        await message.author.add_roles(role, reason=f"Récompense de niveau {current_level}")
+                    except discord.Forbidden:
+                        print(f"Permissions manquantes pour donner le rôle {role.name} sur le serveur {message.guild.name}")
+        else:
+            await self.db.update_user_xp(guild_id, user_id, current_xp, current_level)
 
-# --- Setup du Cog ---
+    # --- Commandes de Configuration ---
+    @xp_group.command(name="config-annonces", description="[Admin] Définit le salon pour les annonces de passage de niveau.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def config_announcements(self, interaction: discord.Interaction, salon: discord.TextChannel):
+        await interaction.response.defer(ephemeral=True)
+        settings = await self.db.get_guild_settings(interaction.guild.id)
+        config = json.loads(settings.get("leveling_config", "{}")) if settings else {}
+        
+        config["announcement_channel"] = salon.id
+        await self.db.update_guild_setting(interaction.guild.id, "leveling_config", config)
+        
+        await interaction.followup.send(f"✅ Les annonces de niveau seront maintenant envoyées dans {salon.mention}.", ephemeral=True)
+
+    @xp_group.command(name="config-roles", description="[Admin] Ajoute un rôle récompense pour un certain niveau.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def config_roles(self, interaction: discord.Interaction, niveau: app_commands.Range[int, 1, 100], role: discord.Role):
+        await interaction.response.defer(ephemeral=True)
+        
+        if interaction.guild.me.top_role <= role:
+            return await interaction.followup.send("❌ Je ne peux pas attribuer ce rôle car il est plus élevé que le mien dans la hiérarchie.", ephemeral=True)
+
+        settings = await self.db.get_guild_settings(interaction.guild.id)
+        config = json.loads(settings.get("leveling_config", "{}")) if settings else {}
+        
+        if "role_rewards" not in config:
+            config["role_rewards"] = {}
+        
+        config["role_rewards"][str(niveau)] = role.id
+        await self.db.update_guild_setting(interaction.guild.id, "leveling_config", config)
+
+        await interaction.followup.send(f"✅ Le rôle {role.mention} sera maintenant donné au niveau **{niveau}**.", ephemeral=True)
+
+    @xp_group.command(name="config-activer", description="[Admin] Active ou désactive le système de niveaux sur le serveur.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def config_toggle(self, interaction: discord.Interaction, statut: bool):
+        await interaction.response.defer(ephemeral=True)
+        settings = await self.db.get_guild_settings(interaction.guild.id)
+        config = json.loads(settings.get("leveling_config", "{}")) if settings else {}
+
+        config["enabled"] = statut
+        await self.db.update_guild_setting(interaction.guild.id, "leveling_config", config)
+
+        message = "activé" if statut else "désactivé"
+        await interaction.followup.send(f"✅ Le système de niveaux a été **{message}**.", ephemeral=True)
+        
 async def setup(bot: commands.Bot):
-    if not hasattr(bot, 'db'):
-        print("ERREUR CRITIQUE (leveling.py): L'objet bot n'a pas d'attribut 'db'.")
-        return
-    await bot.add_cog(LevelingCog(bot, bot.db))
-    print("Cog Leveling chargé.")
+    await bot.add_cog(LevelingCog(bot))
