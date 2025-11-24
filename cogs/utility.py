@@ -1,7 +1,7 @@
 # cogs/utility.py
-import discord
-from discord import app_commands
-from discord.ext import commands, tasks
+import discord # type: ignore
+from discord import app_commands # type: ignore
+from discord.ext import commands, tasks # type: ignore
 from typing import Optional, List, Literal, Dict
 import json
 import os
@@ -93,6 +93,30 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
     
     # ... (autres commandes comme /help, /lock, /unlock, etc. si elles sont ici) ...
 
+import discord # type: ignore
+from discord import app_commands # type: ignore
+# Importez ici vos autres dépendances (asyncio, datetime, load_data, save_data, etc.)
+
+# =====================================================================
+# == AJOUTS NÉCESSAIRES POUR LE VERROUILLAGE DES PERMISSIONS        ==
+# =====================================================================
+LOCKDOWN_PERMISSIONS = {
+    "send_messages": False,             # INTERDIT l'envoi de messages
+    "send_messages_in_threads": False,  # INTERDIT l'envoi dans les fils de discussion
+    "create_public_threads": False,     # INTERDIT la création de fils de discussion publics
+    "create_private_threads": False,    # INTERDIT la création de fils de discussion privés
+}
+
+# Assurez-vous que MAINTENANCE_BACKUP_FILE, load_data, save_data et asyncio sont définis dans votre environnement.
+# =====================================================================
+# ==                VOTRE CODE INITIAL (NON MODIFIÉ)               ==
+# =====================================================================
+
+class MaintenanceCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.maintenance_backup = load_data(MAINTENANCE_BACKUP_FILE) # Assurez-vous que ceci est bien défini
+
     # =============================================
     # ==      COMMANDES MAINTENANCE SERVEUR      ==
     # =============================================
@@ -182,10 +206,10 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
 
 
         async def cancel_callback(interaction_cancel: discord.Interaction):
-             if interaction_cancel.user.id != interaction.user.id:
+            if interaction_cancel.user.id != interaction.user.id:
                 await interaction_cancel.response.send_message("Seul l'initiateur peut annuler.", ephemeral=True); return
-             for item in view.children: item.disabled = True
-             await interaction_cancel.response.edit_message(content="Activation annulée.", view=view)
+            for item in view.children: item.disabled = True
+            await interaction_cancel.response.edit_message(content="Activation annulée.", view=view)
 
         async def on_timeout_callback():
             for item in view.children: item.disabled = True
@@ -203,8 +227,8 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
         view.add_item(cancel_button)
 
         await interaction.response.send_message(
-             "**ATTENTION :** Ceci va restreindre l'accès à tous les salons. **Confirmez-vous ?**",
-             view=view, ephemeral=True
+            "**ATTENTION :** Ceci va restreindre l'accès à tous les salons. **Confirmez-vous ?**",
+            view=view, ephemeral=True
         )
 
     @maintenance_group.command(name="deactivate", description="Désactive la maintenance et restaure les permissions.")
@@ -226,10 +250,10 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
         original_perms_to_restore = backup_data.get("original_perms", {})
 
         if not original_perms_to_restore:
-             del self.maintenance_backup[guild_id_str]
-             save_data(MAINTENANCE_BACKUP_FILE, self.maintenance_backup)
-             await interaction.followup.send("⚠️ Aucune donnée à restaurer. Mode maintenance désactivé.", ephemeral=True)
-             return
+            del self.maintenance_backup[guild_id_str]
+            save_data(MAINTENANCE_BACKUP_FILE, self.maintenance_backup)
+            await interaction.followup.send("⚠️ Aucune donnée à restaurer. Mode maintenance désactivé.", ephemeral=True)
+            return
 
         permission_errors = 0
         total_to_restore = len(original_perms_to_restore)
