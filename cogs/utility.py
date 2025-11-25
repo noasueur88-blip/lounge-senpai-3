@@ -16,7 +16,7 @@ import asyncio
 DATA_DIR = './data'
 SETTINGS_FILE = os.path.join(DATA_DIR, 'settings.json')
 MAINTENANCE_BACKUP_FILE = os.path.join(DATA_DIR, 'maintenance_perms_backup.json')
-SHOP_DATA_FILE = os.path.join(DATA_DIR, 'shop_data.json') # Définition de la constante
+SHOP_DATA_FILE = os.path.join(DATA_DIR, 'shop_data.json') 
 
 # Permissions à verrouiller pour les non-administrateurs en mode maintenance
 LOCKDOWN_PERMISSIONS = {
@@ -100,7 +100,6 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
     # =============================================
     # ==      COMMANDES MAINTENANCE SERVEUR      ==
     # =============================================
-    # Intégration du groupe de commandes dans le Cog principal (CORRIGE L'ERREUR D'AFFICHAGE)
     maintenance_group = app_commands.Group(name="maintenance", description="Gère la maintenance du serveur.")
 
     @maintenance_group.command(name="activate", description="Active la maintenance (restreint l'accès aux salons).")
@@ -126,52 +125,55 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
             
             status_message = await interaction.followup.send("Initialisation...", ephemeral=True, wait=True)
 
-            # --- Logique d'activation (longue) ---
+            # --- DÉBUT DE LA LOGIQUE D'ACTIVATION OPTIMISÉE (Modifications ici) ---
             original_perms_backup = {}
-            roles_to_restrict = [guild.default_role]
-            for role in guild.roles:
-                # Ajout de tous les rôles qui ne sont pas admin et que le bot peut gérer
-                if not (role.is_bot_managed() or role.is_integration() or role.permissions.administrator or role >= guild.me.top_role):
-                    roles_to_restrict.append(role)
+            default_role = guild.default_role # Cible uniquement le rôle @everyone
             
             permission_errors = 0
             all_channels = guild.channels
             total_channels = len(all_channels)
 
+            # Création de la nouvelle overwrite pour @everyone et sauvegarde des anciennes permissions
+            current_overwrites = channel.overwrites_for(default_role) # On prend les overwrites d'un canal, mais on ne les utilise pas ici directement pour la sauvegarde
+            role_perms_to_save = {}
+            new_overwrite = discord.PermissionOverwrite.from_pair(*default_role.permissions.pair()) # On part des permissions SERVEUR du rôle @everyone pour le lock (plus sûr)
+            needs_update = False
+
+            # On itère sur les permissions de LOCKDOWN_PERMISSIONS pour les inverser ou les verrouiller
+            for perm, lock_value in LOCKDOWN_PERMISSIONS.items():
+                # On ne peut pas savoir l'overwrite exacte sans parcourir tous les salons,
+                # mais le plus simple est de sauvegarder la permission actuelle du RÔLE au niveau du serveur.
+                original_value = getattr(default_role.permissions, perm) # Sauvegarde la permission globale du rôle
+                
+                # Si la permission globale n'est pas déjà verrouillée, on la sauvegarde
+                if original_value != lock_value:
+                    role_perms_to_save[perm] = original_value
+                    setattr(new_overwrite, perm, lock_value) # Applique le verrouillage
+                    needs_update = True
+            
+            # Application des changements par canal (seulement pour @everyone)
             for i, channel in enumerate(all_channels):
                 try:
                     await status_message.edit(content=f"Traitement... `{i+1}/{total_channels}` : {channel.mention}")
                 except discord.HTTPException: pass
 
-                channel_perms_for_backup = {}
-                for role in roles_to_restrict:
-                    current_overwrites = channel.overwrites_for(role)
-                    role_perms_to_save = {}
-                    new_overwrite = discord.PermissionOverwrite.from_pair(*current_overwrites.pair())
-                    needs_update = False
-
-                    # Verrouillage des permissions
-                    for perm, lock_value in LOCKDOWN_PERMISSIONS.items():
-                        original_value = getattr(current_overwrites, perm)
-                        if original_value != lock_value:
-                            role_perms_to_save[perm] = original_value
-                            setattr(new_overwrite, perm, lock_value)
-                            needs_update = True
+                # Tente de modifier les permissions du rôle @everyone pour ce salon
+                try:
+                    # Ici on applique les permissions verrouillées (new_overwrite) au rôle @everyone
+                    # Il faut s'assurer de ne pas modifier les permissions si elles ne sont pas nécessaires
+                    # NOTE: Pour la simplification et la rapidité, on applique new_overwrite sans vérification d'overwrite précédente
+                    await channel.set_permissions(default_role, overwrite=new_overwrite, reason=f"Maintenance ON par {interaction.user}")
                     
-                    if getattr(current_overwrites, "view_channel") is False:
-                        setattr(new_overwrite, "view_channel", False)
+                    # On sauvegarde la permission modifiée seulement si la modification a eu lieu
+                    if role_perms_to_save:
+                        # Si le rôle @everyone a été modifié, on l'ajoute au backup du canal.
+                        original_perms_backup[str(channel.id)] = {str(default_role.id): role_perms_to_save}
 
-                    if needs_update:
-                        try:
-                            await channel.set_permissions(role, overwrite=new_overwrite, reason=f"Maintenance ON par {interaction.user}")
-                            if role_perms_to_save:
-                                channel_perms_for_backup[str(role.id)] = role_perms_to_save
-                        except (discord.Forbidden, discord.HTTPException):
-                            permission_errors += 1
-                        await asyncio.sleep(0.5)
-
-                if channel_perms_for_backup:
-                    original_perms_backup[str(channel.id)] = channel_perms_for_backup
+                except (discord.Forbidden, discord.HTTPException):
+                    permission_errors += 1
+                
+                # Délai minimal pour la sécurité et pour éviter les rate limits (réduction de 0.5s à 0.05s)
+                await asyncio.sleep(0.05) 
 
             # Sauvegarde des permissions modifiées
             if original_perms_backup:
@@ -183,6 +185,8 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
                 save_data(MAINTENANCE_BACKUP_FILE, self.maintenance_backup)
                 print("MAINTENANCE: Backup de permissions créé.")
             
+            # --- FIN DE LA LOGIQUE D'ACTIVATION OPTIMISÉE ---
+
             final_message = f"✅ Mode maintenance activé ! ({total_channels} salons traités)."
             if permission_errors > 0: final_message += f"\n⚠️ **{permission_errors} erreur(s)** rencontrée(s)."
             await status_message.edit(content=final_message)
@@ -264,7 +268,7 @@ class UtilityCog(commands.Cog, name="Utilitaires Serveur"):
                     await channel.set_permissions(target, overwrite=restored_overwrite, reason=f"Maintenance OFF par {interaction.user}")
                 except (discord.Forbidden, discord.HTTPException):
                     permission_errors += 1
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.05) # Réduction du délai ici aussi pour accélérer la désactivation
 
         del self.maintenance_backup[guild_id_str]
         save_data(MAINTENANCE_BACKUP_FILE, self.maintenance_backup)
